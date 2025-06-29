@@ -31,7 +31,7 @@ export default async function ChatPage() {
           <SidebarTrigger className="text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-colors" />
           <Button
             variant="ghost"
-            className="text-white/90 hover:bg-white/10 h-8 px-3 rounded-lg font-lg text-md"
+            className="text-white/90 hover:bg-white/10 h-8 px-3 rounded-lg font-medium text-sm"
           >
             ChatGPT
             <ChevronDown className="w-4 h-4 ml-1" />
@@ -65,7 +65,7 @@ export default async function ChatPage() {
 
           {/* Input Area */}
           <div className="relative max-w-3xl mx-auto w-full">
-            <div className="bg-[#2f2f2f] rounded-3xl p-4">
+            <div className="bg-[#2f2f2f] rounded-3xl border border-white/10 shadow-lg p-4">
               <input
                 placeholder="This is a sample input"
                 className="w-full p-1 border-0 bg-transparent text-white placeholder-white/50 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none font-normal"

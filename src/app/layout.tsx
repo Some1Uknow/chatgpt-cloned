@@ -30,8 +30,8 @@ export default function RootLayout({
       afterSignInUrl="/chat"
       afterSignUpUrl="/chat"
     >
-      <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <html lang="en" className="h-full dark">
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-full bg-[#212121] text-white`}>
           {children}
         </body>
       </html>
