@@ -1,3 +1,5 @@
+/* ChatLayout scroll area for messages, leaves space for input at bottom */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -115,6 +117,29 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  /* Custom Scrollbar Styles */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 8px;
+    border: 2px solid var(--background);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--ring);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox */
+  html {
+    scrollbar-color: var(--border) transparent;
+    scrollbar-width: thin;
   }
   /* html, body {
     @apply bg-[#171717] text-white;

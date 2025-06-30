@@ -1,10 +1,5 @@
 import { Button } from "@/components/ui/button";
-import {
-  Mic,
-  Plus,
-  ArrowUp,
-  SlidersHorizontal,
-} from "lucide-react";
+import { Mic, Plus, ArrowUp, SlidersHorizontal } from "lucide-react";
 
 interface ChatInputProps {
   input: string;
@@ -13,7 +8,12 @@ interface ChatInputProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-export default function ChatInput({ input, isLoading, onInputChange, onSubmit }: ChatInputProps) {
+export default function ChatInput({
+  input,
+  isLoading,
+  onInputChange,
+  onSubmit,
+}: ChatInputProps) {
   return (
     <div className="max-w-3xl mx-auto w-full pb-6">
       <form onSubmit={onSubmit} className="relative w-full">

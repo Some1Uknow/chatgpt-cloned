@@ -48,6 +48,8 @@ export default function ChatPage() {
       onInputChange={handleInputChange}
       onSubmit={onSubmit}
       showWelcome={messages.length === 0}
+      inputPosition="center"
+      welcomeTitle="How can I help you?"
     />
   );
 }

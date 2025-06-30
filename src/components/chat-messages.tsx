@@ -19,10 +19,10 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
           }`}
         >
           <div
-            className={`max-w-[80%] rounded-lg px-4 py-2 ${
+            className={`max-w-[80%] rounded-lg px-4 py-2 text-white ${
               message.role === 'user'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white/10 text-white'
+                ? 'bg-white/10'
+                : ''
             }`}
           >
             <p className="whitespace-pre-wrap">{message.content}</p>

@@ -23,19 +23,13 @@ import {
   Palette,
 } from "lucide-react";
 
-// Chat data structure
-const chatItems = [
-  { id: 1, title: "Hey there conversation" },
-  { id: 2, title: "Cloudinary vs Uploadcare Ease" },
-  { id: 3, title: "GitHub Search Query Fix" },
-  { id: 4, title: "Sunk Cost Fallacy Explained" },
-  { id: 5, title: "TURBIN3 Orientation Registration" },
-  { id: 6, title: "ResumeMax Project Overview" },
-  { id: 7, title: "Knowledge Test Challenge" },
-  { id: 8, title: "Solana Engineering Curriculum..." },
-  { id: 9, title: "Solana Learning Platforms" },
-  { id: 10, title: "LaTeX Debugging Fix" },
-];
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+
+interface ChatItem {
+  chatId: string;
+  title: string;
+}
 
 // Navigation menu items
 const navigationItems = [
@@ -46,7 +40,39 @@ const navigationItems = [
   { id: 5, icon: Palette, label: "Canva" },
 ];
 
+
 export function ChatSidebar() {
+  const [chats, setChats] = useState<ChatItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
+
+  // Fetch chats from API
+  const fetchChats = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/chat-list");
+      if (res.ok) {
+        const data = await res.json();
+        setChats(data.chats || []);
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
+    fetchChats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // Start new chat: go to /chat for a fresh chat
+  const handleNewChat = () => {
+    window.location.assign("/chat");
+  };
+
   return (
     <Sidebar className="w-64 bg-[#171717] border-r border-white/10">
       <SidebarHeader className="p-4">
@@ -56,6 +82,7 @@ export function ChatSidebar() {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-white hover:bg-[#2f2f2f] mb-3 h-10 rounded-lg font-normal"
+                onClick={handleNewChat}
               >
                 <Plus className="w-4 h-4 mr-3" />
                 New chat
@@ -105,15 +132,30 @@ export function ChatSidebar() {
           <SidebarGroupContent>
             <div className="h-full overflow-y-auto">
               <SidebarMenu className="space-y-1 px-2">
-                {chatItems.map((chat) => (
-                  <SidebarMenuItem key={chat.id}>
-                    <SidebarMenuButton className="text-sm text-gray-300 hover:bg-[#2f2f2f] rounded-lg p-3 w-full justify-start font-normal">
-                      {chat.title.length > 25
-                        ? `${chat.title.substring(0, 25)}...`
-                        : chat.title}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {loading ? (
+                  <div className="text-gray-400 text-xs px-2 py-3">
+                    Loading...
+                  </div>
+                ) : chats.length === 0 ? (
+                  <div className="text-gray-400 text-xs px-2 py-3">
+                    No chats yet
+                  </div>
+                ) : (
+                  chats.map((chat) => (
+                    <SidebarMenuItem key={chat.chatId}>
+                      <SidebarMenuButton
+                        className="text-sm text-gray-300 hover:bg-[#2f2f2f] rounded-lg p-3 w-full justify-start font-normal"
+                        onClick={() =>
+                          window.location.assign(`/chat/${chat.chatId}`)
+                        }
+                      >
+                        {chat.title?.length > 25
+                          ? `${chat.title.substring(0, 25)}...`
+                          : chat.title || "Untitled Chat"}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))
+                )}
               </SidebarMenu>
             </div>
           </SidebarGroupContent>

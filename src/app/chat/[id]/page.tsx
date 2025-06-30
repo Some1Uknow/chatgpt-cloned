@@ -134,6 +134,7 @@ export default function ChatIdPage() {
         isLoading={isLoading}
         onInputChange={handleInputChange}
         onSubmit={onSubmit}
+        inputPosition="bottom"
       />
     </div>
   );
