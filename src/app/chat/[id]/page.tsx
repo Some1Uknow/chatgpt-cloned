@@ -1,113 +1,140 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
-import { getOrCreateUser } from "@/lib/user";
-import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Settings,
-  ChevronDown,
-  Crown,
-  Mic,
-  Plus,
-  ArrowUp,
-  SlidersHorizontal,
-} from "lucide-react";
+"use client";
 
-export default async function ChatPage() {
-  const { userId } = await auth();
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useChat } from "ai/react";
+import { useAuthRedirect } from "@/hooks/use-auth-redirect";
+import { ChatMessage, ChatData } from "@/types/chat";
+import ChatLayout from "@/components/chat-layout";
+import ErrorState from "@/components/error-state";
 
-  if (!userId) {
-    redirect("/sign-in");
+export default function ChatIdPage() {
+  const { isSignedIn } = useAuthRedirect();
+  const router = useRouter();
+  const params = useParams();
+  const chatId = params.id as string;
+
+  const [isLoadingChat, setIsLoadingChat] = useState(true);
+  const [chatData, setChatData] = useState<ChatData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading,
+    setMessages,
+  } = useChat({
+    api: `/api/chat?id=${chatId}`,
+    onError(error) {
+      console.error("Chat error: from ID page", error);
+      setError("Failed to send message. Please try again.");
+    },
+    onFinish(message) {
+      console.log("Message finished:", message);
+    },
+  });
+
+  // Fetch existing chat data
+  useEffect(() => {
+    if (!isSignedIn || !chatId) {
+      console.log(
+        "Skipping fetch - isSignedIn:",
+        isSignedIn,
+        "chatId:",
+        chatId
+      );
+      return;
+    }
+
+    console.log("Fetching chat data for chatId:", chatId);
+    const fetchChatData = async () => {
+      try {
+        setIsLoadingChat(true);
+        const response = await fetch(`/api/chat?id=${chatId}`);
+
+        console.log("API response status:", response.status);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            console.log("Chat not found");
+            setError("Chat not found");
+          } else {
+            console.log("Failed to load chat");
+            setError("Failed to load chat");
+          }
+          return;
+        }
+
+        const data: ChatData = await response.json();
+        console.log("Chat data loaded:", data);
+        setChatData(data);
+
+        // Convert the messages to the format expected by useChat
+        const formattedMessages = data.messages.map((msg, index) => ({
+          id: `${chatId}-${index}`,
+          role: msg.role,
+          content: msg.content,
+          createdAt: new Date(msg.timestamp),
+        }));
+
+        setMessages(formattedMessages);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching chat:", err);
+        setError("Failed to load chat");
+      } finally {
+        setIsLoadingChat(false);
+      }
+    };
+
+    fetchChatData();
+  }, [isSignedIn, chatId, setMessages]);
+
+  if (!isSignedIn) {
+    return null;
   }
 
-  const user = await getOrCreateUser();
+  if (error) {
+    return (
+      <ErrorState
+        error={error}
+        onRetry={() => router.push("/chat")}
+        retryButtonText="Go to New Chat"
+      />
+    );
+  }
+
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (input.trim() && !isLoading) {
+      handleSubmit(e);
+    }
+  };
 
   return (
-    <div className="flex flex-col h-full bg-[#212121]">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center space-x-3">
-          <SidebarTrigger className="text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-colors" />
-          <Button
-            variant="ghost"
-            className="text-white/90 hover:bg-white/10 h-8 px-3 rounded-lg font-medium text-sm"
-          >
-            ChatGPT
-            <ChevronDown className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Button className="bg-[#6366f1] hover:bg-[#5856eb] text-white h-8 px-3 rounded-lg font-medium text-sm flex items-center">
-            <Crown className="w-4 h-4 mr-1.5" />
-            Get Plus
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-          </Button>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </header>
-
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 bg-[#212121]">
-        <div className="w-full max-w-3xl">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-normal text-white/90 mb-8">
-              How can I help you today?
-            </h1>
-          </div>
-
-          {/* Input Area */}
-          <div className="relative max-w-3xl mx-auto w-full">
-            <div className="bg-[#2f2f2f] rounded-3xl border border-white/10 shadow-lg p-4">
-              <input
-                placeholder="This is a sample input"
-                className="w-full p-1 border-0 bg-transparent text-white placeholder-white/50 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none font-normal"
-              />
-              <div className="flex justify-between items-center mt-2">
-                <div className="flex items-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white/50 hover:text-white/70 rounded-lg flex-shrink-0"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/50 hover:text-white/70 flex items-center flex-shrink-0"
-                  >
-                    <SlidersHorizontal className="w-4 h-4 mr-1" />
-                    Tools
-                  </Button>
-                </div>
-                <div className="flex items-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white/50 hover:text-white/70 rounded-lg flex-shrink-0"
-                  >
-                    <Mic className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    className="bg-white text-black rounded-full w-8 h-8 ml-2 flex-shrink-0"
-                  >
-                    <ArrowUp className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
+    <div className="relative">
+      {/* Loading overlay */}
+      {isLoadingChat && (
+        <div className="absolute inset-0 bg-[#212121]/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="text-white/60">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-100"></div>
+              <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-200"></div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      <ChatLayout
+        messages={messages}
+        input={input}
+        isLoading={isLoading}
+        onInputChange={handleInputChange}
+        onSubmit={onSubmit}
+      />
     </div>
   );
 }

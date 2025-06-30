@@ -7,14 +7,21 @@ const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
 
-  // Redirect authenticated users away from auth pages to /chat
+  // Redirect authenticated users away from auth pages
   if (userId && isPublicRoute(req)) {
+    // Check if there's a redirect URL parameter
+    const redirectUrl = req.nextUrl.searchParams.get('redirect_url');
+    if (redirectUrl && redirectUrl.startsWith('/chat')) {
+      return NextResponse.redirect(new URL(redirectUrl, req.url));
+    }
     return NextResponse.redirect(new URL('/chat', req.url));
   }
 
-  // Redirect unauthenticated users to sign-in
+  // Redirect unauthenticated users to sign-in with return URL
   if (!userId && isProtectedRoute(req)) {
-    return NextResponse.redirect(new URL('/sign-in', req.url));
+    const signInUrl = new URL('/sign-in', req.url);
+    signInUrl.searchParams.set('redirect_url', req.nextUrl.pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
   // Redirect authenticated users from home page to /chat

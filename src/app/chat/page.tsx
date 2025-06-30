@@ -1,113 +1,53 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
-import { getOrCreateUser } from "@/lib/user";
-import { Button } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  Settings,
-  ChevronDown,
-  Crown,
-  Mic,
-  Plus,
-  ArrowUp,
-  SlidersHorizontal,
-} from "lucide-react";
+"use client";
 
-export default async function ChatPage() {
-  const { userId } = await auth();
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useChat } from "ai/react";
+import { useAuthRedirect } from "@/hooks/use-auth-redirect";
+import ChatLayout from "@/components/chat-layout";
 
-  if (!userId) {
-    redirect("/sign-in");
+export default function ChatPage() {
+  const { isSignedIn } = useAuthRedirect();
+  const router = useRouter();
+  const [hasStartedChat, setHasStartedChat] = useState(false);
+
+  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+    useChat({
+      api: "/api/chat",
+      onResponse(response) {
+        // Extract chatId from response headers
+        const chatId = response.headers.get("X-Chat-Id");
+        if (chatId && !hasStartedChat) {
+          setHasStartedChat(true);
+          // Use Next.js router.replace to trigger proper navigation
+          router.replace(`/chat/${chatId}`);
+        }
+      },
+      onError(error) {
+        console.error("Chat error: main page", error);
+        setHasStartedChat(false);
+      },
+    });
+
+  if (!isSignedIn) {
+    return null;
   }
 
-  const user = await getOrCreateUser();
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (input.trim() && !isLoading) {
+      handleSubmit(e);
+    }
+  };
 
   return (
-    <div className="flex flex-col h-full bg-[#212121]">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center space-x-3">
-          <SidebarTrigger className="text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-colors" />
-          <Button
-            variant="ghost"
-            className="text-white/90 hover:bg-white/10 h-8 px-3 rounded-lg font-lg text-md"
-          >
-            ChatGPT
-            <ChevronDown className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Button className="bg-[#6366f1] hover:bg-[#5856eb] text-white h-8 px-3 rounded-lg font-medium text-sm flex items-center">
-            <Crown className="w-4 h-4 mr-1.5" />
-            Get Plus
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-          </Button>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </header>
-
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 bg-[#212121]">
-        <div className="w-full max-w-3xl">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-normal text-white/90 mb-8">
-              How can I help you today?
-            </h1>
-          </div>
-
-          {/* Input Area */}
-          <div className="relative max-w-3xl mx-auto w-full">
-            <div className="bg-[#2f2f2f] rounded-3xl p-4">
-              <input
-                placeholder="This is a sample input"
-                className="w-full p-1 border-0 bg-transparent text-white placeholder-white/50 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none font-normal"
-              />
-              <div className="flex justify-between items-center mt-2">
-                <div className="flex items-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white/50 hover:text-white/70 rounded-lg flex-shrink-0"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/50 hover:text-white/70 flex items-center flex-shrink-0"
-                  >
-                    <SlidersHorizontal className="w-4 h-4 mr-1" />
-                    Tools
-                  </Button>
-                </div>
-                <div className="flex items-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white/50 hover:text-white/70 rounded-lg flex-shrink-0"
-                  >
-                    <Mic className="w-5 h-5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    className="bg-white text-black rounded-full w-8 h-8 ml-2 flex-shrink-0"
-                  >
-                    <ArrowUp className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <ChatLayout
+      messages={messages}
+      input={input}
+      isLoading={isLoading}
+      onInputChange={handleInputChange}
+      onSubmit={onSubmit}
+      showWelcome={messages.length === 0}
+    />
   );
 }
