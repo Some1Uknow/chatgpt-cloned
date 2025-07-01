@@ -68,8 +68,7 @@ export default function ChatMessages({ messages, isLoading }: ChatMessagesProps)
                   src={message.imageUrl} 
                   alt={message.fileName || "Uploaded image"} 
                   className="rounded-lg max-w-full h-auto max-h-64 object-contain"
-                  width={500}
-                  height={300}
+                fill
                 />
                 {message.fileName && (
                   <p className="text-xs text-white/60 mt-1">{message.fileName}</p>
