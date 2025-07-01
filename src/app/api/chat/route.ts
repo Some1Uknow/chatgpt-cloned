@@ -2,11 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { streamText, generateText } from "ai";
-import {
-  createMem0,
-  addMemories,
-  retrieveMemories,
-} from "@mem0/vercel-ai-provider";
+import { createMem0, retrieveMemories } from "@mem0/vercel-ai-provider";
 import { openai } from "@ai-sdk/openai";
 import dbConnect from "@/lib/mongodb";
 import Chat from "@/models/Chat";
@@ -26,7 +22,6 @@ export async function POST(req: NextRequest) {
     provider: "openai",
     mem0ApiKey: process.env.MEM0_API_KEY!,
     apiKey: process.env.OPENAI_API_KEY!,
-    config: { compatibility: "strict" },
     mem0Config: {
       user_id: userId,
       org_id: process.env.MEM0_ORG_ID,
@@ -65,20 +60,25 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  if (isFirstMessage && messages.length === 1 && messages[0].role === "user") {
-    try {
-      const titleResponse = await generateText({
-        model: mem0("gpt-3.5-turbo"),
-        prompt: `Create a short, descriptive title (max 20 characters) for this conversation based on the user's message: "${messages[0].content}"`,
-      });
-      chat.title = titleResponse.text.trim().replace(/['\"]/g, "");
-    } catch (error) {
-      console.error("Error generating chat title:", error);
-      chat.title = messages[0].content.slice(0, 20);
-    }
-  }
-
   await chat.save();
+
+  // Fire-and-forget title generation
+  if (isFirstMessage && messages.length > 0 && messages[0].role === "user") {
+    (async () => {
+      try {
+        const titleResponse = await generateText({
+          model: mem0("gpt-3.5-turbo"),
+          prompt: `Create a short, descriptive title (max 20 characters) for this conversation based on the user's message: "${messages[0].content}"`,
+        });
+        chat.title = titleResponse.text.trim().replace(/['"]/g, "");
+      } catch (error) {
+        console.error("Error generating chat title:", error);
+        chat.title = messages[0].content.slice(0, 20);
+      } finally {
+        await chat.save();
+      }
+    })();
+  }
 
   let systemPrompt = "You are a helpful assistant.";
   try {
@@ -86,16 +86,16 @@ export async function POST(req: NextRequest) {
       [
         {
           role: "user",
-          content: [
-            { type: "text", text: messages[messages.length - 1].content },
-          ],
+          content: [{ type: "text", text: "__FETCH__" }],
         },
       ],
-      { user_id: userId, mem0ApiKey: process.env.MEM0_API_KEY! }
+      { user_id: userId, mem0ApiKey: process.env.MEM0_API_KEY!, limit: 10 }
     );
+
     if (memoryContext && memoryContext.trim()) {
       systemPrompt = memoryContext;
     }
+    console.log("Memory context retrieved:", systemPrompt);
   } catch (error) {
     console.error("Error retrieving memories:", error);
   }
@@ -121,29 +121,22 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const { userId } = getAuth(req);
-  if (!userId) {
+  if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   await dbConnect();
-  const url = new URL(req.url);
-  const chatId = url.searchParams.get("id");
-
-  if (!chatId) {
+  const chatId = new URL(req.url).searchParams.get("id");
+  if (!chatId)
     return NextResponse.json({ error: "Missing chatId" }, { status: 400 });
-  }
 
   const chat = await Chat.findOne({ chatId, userId }).lean();
-
-  if (!chat || Array.isArray(chat)) {
+  if (!chat)
     return NextResponse.json({ error: "Chat not found" }, { status: 404 });
-  }
 
   return NextResponse.json({
-    chatId: (chat as any).chatId,
-    title: (chat as any).title,
-    messages: (chat as any).messages,
-    createdAt: (chat as any).createdAt,
-    updatedAt: (chat as any).updatedAt,
+    chatId: chat.chatId,
+    title: chat.title,
+    messages: chat.messages,
+    createdAt: chat.createdAt,
+    updatedAt: chat.updatedAt,
   });
 }
