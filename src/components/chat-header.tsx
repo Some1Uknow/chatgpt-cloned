@@ -1,3 +1,4 @@
+// chat-header.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -8,8 +9,38 @@ import {
   ChevronDown,
   StarsIcon,
 } from "lucide-react";
+import { useState } from "react";
+import dynamic from "next/dynamic";
+
+const MemoryModal = dynamic(() => import("@/components/memory-modal"), { ssr: false });
 
 export default function ChatHeader() {
+  const [memoryOpen, setMemoryOpen] = useState(false);
+  const [memories, setMemories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMemories = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/memory");
+      if (!res.ok) throw new Error("Failed to fetch memory");
+      const data = await res.json();
+      setMemories(data.memories?.results || data.memories || []);
+    } catch (e: any) {
+      setError(e.message || "Unknown error");
+      setMemories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenMemory = async () => {
+    setMemoryOpen(true);
+    await fetchMemories();
+  };
+
   return (
     <header className="relative flex items-center justify-between px-4 py-3">
       <div className="flex items-center space-x-3">
@@ -35,11 +66,18 @@ export default function ChatHeader() {
           variant="ghost"
           size="sm"
           className="text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-colors"
+          onClick={handleOpenMemory}
         >
           <Settings className="w-4 h-4" />
         </Button>
         <UserButton afterSignOutUrl="/" />
       </div>
+      <MemoryModal
+        open={memoryOpen}
+        onClose={() => setMemoryOpen(false)}
+        memories={loading ? [{ loading: true }] : error ? [{ error }] : memories}
+        onRefresh={fetchMemories}
+      />
     </header>
   );
 }
