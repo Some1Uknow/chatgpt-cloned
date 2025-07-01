@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import useSWR from "swr";
-import { ChatData } from "@/types/chat";
+import { ChatData, UIMessage } from "@/types/chat";
 
 // Fetcher function for SWR
 const fetcher = async (url: string): Promise<ChatData> => {
@@ -18,8 +18,8 @@ interface UseChatDataProps {
   isSignedIn: boolean | undefined;
   isTransitioning: boolean;
   isNewChat: boolean;
-  messages: any[];
-  setMessages: (messages: any[]) => void;
+  messages: UIMessage[];
+  setMessages: (messages: UIMessage[]) => void;
   setError: (error: string | null) => void;
 }
 
