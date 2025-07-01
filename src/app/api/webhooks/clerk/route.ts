@@ -4,7 +4,7 @@ import { Webhook } from 'svix';
 import connectToDatabase from '@/lib/mongodb';
 import User from '@/models/User';
 
-const webhookSecret = process.env.CLERK_WEBHOOK_SECRET || '';
+const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
 
 interface ClerkWebhookPayload {
   type: string;
@@ -18,6 +18,12 @@ interface ClerkWebhookPayload {
 }
 
 async function validateRequest(request: NextRequest): Promise<ClerkWebhookPayload> {
+  if (!webhookSecret) {
+    throw new Error(
+      'CLERK_WEBHOOK_SECRET is not set. Please add it to your environment variables.'
+    );
+  }
+
   const payloadString = await request.text();
   const headerPayload = await headers();
 
