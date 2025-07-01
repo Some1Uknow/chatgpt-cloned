@@ -14,9 +14,15 @@ import dynamic from "next/dynamic";
 
 const MemoryModal = dynamic(() => import("@/components/memory-modal"), { ssr: false });
 
+interface Memory {
+  id: string;
+  text: string;
+  [key: string]: unknown;
+}
+
 export default function ChatHeader() {
   const [memoryOpen, setMemoryOpen] = useState(false);
-  const [memories, setMemories] = useState<any[]>([]);
+  const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,8 +34,9 @@ export default function ChatHeader() {
       if (!res.ok) throw new Error("Failed to fetch memory");
       const data = await res.json();
       setMemories(data.memories?.results || data.memories || []);
-    } catch (e: any) {
-      setError(e.message || "Unknown error");
+    } catch (e: unknown) {
+      const error = e as Error;
+      setError(error.message || "Unknown error");
       setMemories([]);
     } finally {
       setLoading(false);

@@ -6,7 +6,18 @@ import User from '@/models/User';
 
 const webhookSecret = process.env.CLERK_WEBHOOK_SECRET || '';
 
-async function validateRequest(request: NextRequest) {
+interface ClerkWebhookPayload {
+  type: string;
+  data: {
+    id: string;
+    email_addresses: Array<{ email_address: string }>;
+    first_name: string;
+    last_name: string;
+    image_url: string;
+  };
+}
+
+async function validateRequest(request: NextRequest): Promise<ClerkWebhookPayload> {
   const payloadString = await request.text();
   const headerPayload = await headers();
 
@@ -17,7 +28,7 @@ async function validateRequest(request: NextRequest) {
   };
 
   const wh = new Webhook(webhookSecret);
-  return wh.verify(payloadString, svixHeaders) as any;
+  return wh.verify(payloadString, svixHeaders) as ClerkWebhookPayload;
 }
 
 export async function POST(request: NextRequest) {

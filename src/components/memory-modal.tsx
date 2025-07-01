@@ -9,7 +9,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -197,7 +196,7 @@ export default function MemoryModal({ open, onClose, memories, onRefresh }: Memo
             AI Memory
           </DialogTitle>
           <DialogDescription className="text-sm">
-            View and manage your AI assistant's memory for more personalized responses.
+            View and manage your AI assistant`&apos;`s memory for more personalized responses.
           </DialogDescription>
         </DialogHeader>
 

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 
 export function useAuthRedirect() {

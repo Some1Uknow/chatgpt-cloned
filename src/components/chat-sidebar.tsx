@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -24,7 +23,6 @@ import {
   Plus,
   Search,
   BookOpen,
-  Zap,
   Users,
   CheckCircle,
   Palette,
@@ -61,7 +59,9 @@ export function ChatSidebar() {
   const router = useRouter();
 
   // Get current chat ID from pathname
-  const currentChatId = pathname.startsWith('/chat/') ? pathname.split('/chat/')[1] : null;
+  const currentChatId = pathname.startsWith("/chat/")
+    ? pathname.split("/chat/")[1]
+    : null;
 
   // Fetch chats from API
   const fetchChats = async () => {
@@ -73,7 +73,7 @@ export function ChatSidebar() {
         setChats(data.chats || []);
       }
     } catch (e) {
-      // ignore
+      console.error("Error fetching chats:", e);
     } finally {
       setLoading(false);
     }
@@ -81,12 +81,13 @@ export function ChatSidebar() {
 
   useEffect(() => {
     fetchChats();
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   // Start new chat: go to /chat for a fresh chat
   const handleNewChat = () => {
-    window.location.assign("/chat");
+    router.push("/chat");
   };
 
   // Delete chat
@@ -101,7 +102,7 @@ export function ChatSidebar() {
       if (res.ok) {
         // If we're currently viewing the deleted chat, redirect to /chat
         if (pathname === `/chat/${chatId}`) {
-          window.location.assign("/chat");
+          router.push("/chat");
           return;
         }
         // Otherwise, just refetch the chat list
@@ -159,7 +160,7 @@ export function ChatSidebar() {
           />
           <span className="text-white font-medium text-lg">ChatGPT</span>
         </div>
-        
+
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
@@ -227,9 +228,11 @@ export function ChatSidebar() {
                 ) : (
                   chats.map((chat) => (
                     <SidebarMenuItem key={chat.chatId}>
-                      <div className={`flex items-center group hover:bg-gray-800/50 rounded-lg transition-colors duration-200 ${
-                        currentChatId === chat.chatId ? 'bg-gray-800/70' : ''
-                      }`}>
+                      <div
+                        className={`flex items-center group hover:bg-gray-800/50 rounded-lg transition-colors duration-200 ${
+                          currentChatId === chat.chatId ? "bg-gray-800/70" : ""
+                        }`}
+                      >
                         {editingChatId === chat.chatId ? (
                           <div className="flex-1 flex items-center gap-2 p-2">
                             <Input
@@ -258,9 +261,9 @@ export function ChatSidebar() {
                           <>
                             <SidebarMenuButton
                               className={`flex-1 text-sm hover:bg-transparent rounded-lg px-3 py-2 justify-start font-medium min-h-[36px] transition-colors duration-200 ${
-                                currentChatId === chat.chatId 
-                                  ? 'text-white' 
-                                  : 'text-gray-300 hover:text-white'
+                                currentChatId === chat.chatId
+                                  ? "text-white"
+                                  : "text-gray-300 hover:text-white"
                               }`}
                               onClick={() =>
                                 window.location.assign(`/chat/${chat.chatId}`)
@@ -282,12 +285,14 @@ export function ChatSidebar() {
                                   <MoreHorizontal className="w-4 h-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent 
-                                align="end" 
+                              <DropdownMenuContent
+                                align="end"
                                 className="w-40 bg-gray-800 border-gray-700"
                               >
                                 <DropdownMenuItem
-                                  onClick={() => handleEditChat(chat.chatId, chat.title)}
+                                  onClick={() =>
+                                    handleEditChat(chat.chatId, chat.title)
+                                  }
                                   className="cursor-pointer text-gray-300 hover:text-white hover:bg-gray-700"
                                 >
                                   <Edit2 className="w-4 h-4 mr-2" />

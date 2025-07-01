@@ -1,5 +1,11 @@
 import mongoose from 'mongoose';
 
+const AttachmentSchema = new mongoose.Schema({
+  url: { type: String, required: true },
+  name: { type: String, required: true },
+  type: { type: String, required: true },
+}, { _id: false });
+
 const MessageSchema = new mongoose.Schema({
   role: {
     type: String,
@@ -7,12 +13,16 @@ const MessageSchema = new mongoose.Schema({
     required: true,
   },
   content: {
-    type: String,
+    type: mongoose.Schema.Types.Mixed, // Allow both string and array
     required: true,
   },
   timestamp: {
     type: Date,
     default: Date.now,
+  },
+  attachments: {
+    type: [AttachmentSchema],
+    default: [],
   },
 });
 

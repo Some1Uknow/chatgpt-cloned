@@ -1,7 +1,21 @@
 export interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  imageUrl?: string;
+  fileName?: string;
+  fileType?: "image" | "pdf";
+  attachments?: Array<{
+    url: string;
+    name: string;
+    type: "image" | "pdf";
+  }>;
+}
+
+export interface ExperimentalAttachment {
+  url: string;
+  name?: string; // Made optional to match AI SDK
+  contentType?: string;
 }
 
 export interface ChatData {
@@ -14,7 +28,11 @@ export interface ChatData {
 
 export interface UIMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system' | 'data';
+  role: "user" | "assistant" | "system" | "data";
   content: string;
   createdAt?: Date;
+  imageUrl?: string;
+  fileName?: string;
+  fileType?: "image" | "pdf";
+  experimental_attachments?: ExperimentalAttachment[];
 }

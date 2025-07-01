@@ -3,6 +3,7 @@ import ChatMessages from "@/components/chat-messages";
 import ChatInput from "@/components/chat-input";
 import WelcomeMessage from "@/components/welcome-message";
 import { UIMessage } from "@/types/chat";
+import { FileAttachment } from "@/components/file-upload-dropdown";
 
 interface ChatLayoutProps {
   messages: UIMessage[];
@@ -13,6 +14,9 @@ interface ChatLayoutProps {
   showWelcome?: boolean;
   welcomeTitle?: string;
   inputPosition?: "center" | "bottom";
+  attachments?: FileAttachment[];
+  onFileUpload?: (attachment: FileAttachment) => void;
+  onRemoveAttachment?: (index: number) => void;
 }
 
 export default function ChatLayout({
@@ -24,6 +28,9 @@ export default function ChatLayout({
   showWelcome = false,
   welcomeTitle,
   inputPosition = "bottom",
+  attachments = [],
+  onFileUpload,
+  onRemoveAttachment,
 }: ChatLayoutProps) {
   // If inputPosition is center, input is below welcome, else fixed at bottom
   const showWelcomeMessage = messages.length === 0 && showWelcome;
@@ -45,6 +52,9 @@ export default function ChatLayout({
               isLoading={isLoading}
               onInputChange={onInputChange}
               onSubmit={onSubmit}
+              attachments={attachments}
+              onFileUpload={onFileUpload}
+              onRemoveAttachment={onRemoveAttachment}
             />
           </div>
         </div>
@@ -65,6 +75,9 @@ export default function ChatLayout({
               isLoading={isLoading}
               onInputChange={onInputChange}
               onSubmit={onSubmit}
+              attachments={attachments}
+              onFileUpload={onFileUpload}
+              onRemoveAttachment={onRemoveAttachment}
             />
           </div>
         </div>
