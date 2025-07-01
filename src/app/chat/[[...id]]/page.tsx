@@ -4,18 +4,17 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useChat } from "ai/react";
 import { useAuthRedirect } from "@/hooks/use-auth-redirect";
-import { ChatMessage, ChatData } from "@/types/chat";
+import { ChatData } from "@/types/chat";
 import ChatLayout from "@/components/chat-layout";
 import ErrorState from "@/components/error-state";
 
-export default function ChatIdPage() {
+export default function ChatPage() {
   const { isSignedIn } = useAuthRedirect();
   const router = useRouter();
   const params = useParams();
-  const chatId = params.id as string;
+  const chatId = Array.isArray(params.id) ? params.id[0] : undefined;
 
-  const [isLoadingChat, setIsLoadingChat] = useState(true);
-  const [chatData, setChatData] = useState<ChatData | null>(null);
+  const [isLoadingChat, setIsLoadingChat] = useState(!!chatId);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -26,9 +25,17 @@ export default function ChatIdPage() {
     isLoading,
     setMessages,
   } = useChat({
-    api: `/api/chat?id=${chatId}`,
+    api: chatId ? `/api/chat?id=${chatId}` : "/api/chat",
+    onResponse(response) {
+      if (!chatId) {
+        const newChatId = response.headers.get("X-Chat-Id");
+        if (newChatId) {
+          router.replace(`/chat/${newChatId}`, { scroll: false });
+        }
+      }
+    },
     onError(error) {
-      console.error("Chat error: from ID page", error);
+      console.error("Chat error:", error);
       setError("Failed to send message. Please try again.");
     },
     onFinish(message) {
@@ -36,42 +43,27 @@ export default function ChatIdPage() {
     },
   });
 
-  // Fetch existing chat data
+  // Fetch existing chat data if chatId is present
   useEffect(() => {
     if (!isSignedIn || !chatId) {
-      console.log(
-        "Skipping fetch - isSignedIn:",
-        isSignedIn,
-        "chatId:",
-        chatId
-      );
+      setIsLoadingChat(false);
       return;
     }
 
-    console.log("Fetching chat data for chatId:", chatId);
     const fetchChatData = async () => {
       try {
         setIsLoadingChat(true);
         const response = await fetch(`/api/chat?id=${chatId}`);
 
-        console.log("API response status:", response.status);
-
         if (!response.ok) {
-          if (response.status === 404) {
-            console.log("Chat not found");
-            setError("Chat not found");
-          } else {
-            console.log("Failed to load chat");
-            setError("Failed to load chat");
-          }
+          setError(
+            response.status === 404 ? "Chat not found" : "Failed to load chat"
+          );
           return;
         }
 
         const data: ChatData = await response.json();
-        console.log("Chat data loaded:", data);
-        setChatData(data);
 
-        // Convert the messages to the format expected by useChat
         const formattedMessages = data.messages.map((msg, index) => ({
           id: `${chatId}-${index}`,
           role: msg.role,
@@ -113,9 +105,10 @@ export default function ChatIdPage() {
     }
   };
 
+  const showWelcome = messages.length === 0 && !isLoading && !isLoadingChat;
+
   return (
-    <div className="relative">
-      {/* Loading overlay */}
+    <div className="relative h-full">
       {isLoadingChat && (
         <div className="absolute inset-0 bg-[#212121]/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="text-white/60">
@@ -134,7 +127,9 @@ export default function ChatIdPage() {
         isLoading={isLoading}
         onInputChange={handleInputChange}
         onSubmit={onSubmit}
-        inputPosition="bottom"
+        showWelcome={showWelcome}
+        inputPosition={showWelcome ? "center" : "bottom"}
+        welcomeTitle="How can I help you?"
       />
     </div>
   );

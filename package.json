@@ -19,6 +19,7 @@
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.7",
+    "@tanstack/react-query": "^5.81.5",
     "@uploadcare/file-uploader": "^1.18.0",
     "ai": "^4.3.16",
     "class-variance-authority": "^0.7.1",
@@ -33,6 +34,7 @@
     "react-dom": "^19.0.0",
     "sonner": "^2.0.5",
     "svix": "^1.68.0",
+    "swr": "^2.3.3",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
