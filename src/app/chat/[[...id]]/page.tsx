@@ -13,7 +13,9 @@ import ErrorState from "@/components/error-state";
 const fetcher = async (url: string): Promise<ChatData> => {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(response.status === 404 ? "Chat not found" : "Failed to load chat");
+    throw new Error(
+      response.status === 404 ? "Chat not found" : "Failed to load chat"
+    );
   }
   return response.json();
 };
@@ -26,10 +28,11 @@ export default function ChatPage() {
 
   // Use SWR to fetch chat data
   const shouldFetch = isSignedIn && chatId;
-  const { data: chatData, error: swrError, isLoading: isLoadingChat } = useSWR(
-    shouldFetch ? `/api/chat?id=${chatId}` : null,
-    fetcher
-  );
+  const {
+    data: chatData,
+    error: swrError,
+    isLoading: isLoadingChat,
+  } = useSWR(shouldFetch ? `/api/chat?id=${chatId}` : null, fetcher);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -70,7 +73,7 @@ export default function ChatPage() {
         content: msg.content,
         createdAt: new Date(msg.timestamp),
       }));
-      
+
       // Only set messages if they're different to avoid infinite re-renders
       if (messages.length === 0 || messages[0]?.id !== `${chatId}-0`) {
         setMessages(formattedMessages);
