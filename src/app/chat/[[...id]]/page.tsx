@@ -3,10 +3,20 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useChat } from "ai/react";
+import useSWR from "swr";
 import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 import { ChatData } from "@/types/chat";
 import ChatLayout from "@/components/chat-layout";
 import ErrorState from "@/components/error-state";
+
+// Fetcher function for SWR
+const fetcher = async (url: string): Promise<ChatData> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(response.status === 404 ? "Chat not found" : "Failed to load chat");
+  }
+  return response.json();
+};
 
 export default function ChatPage() {
   const { isSignedIn } = useAuthRedirect();
@@ -14,7 +24,13 @@ export default function ChatPage() {
   const params = useParams();
   const chatId = Array.isArray(params.id) ? params.id[0] : undefined;
 
-  const [isLoadingChat, setIsLoadingChat] = useState(!!chatId);
+  // Use SWR to fetch chat data
+  const shouldFetch = isSignedIn && chatId;
+  const { data: chatData, error: swrError, isLoading: isLoadingChat } = useSWR(
+    shouldFetch ? `/api/chat?id=${chatId}` : null,
+    fetcher
+  );
+
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -43,46 +59,25 @@ export default function ChatPage() {
     },
   });
 
-  // Fetch existing chat data if chatId is present
+  // Handle SWR data and errors in useEffect to avoid setState during render
   useEffect(() => {
-    if (!isSignedIn || !chatId) {
-      setIsLoadingChat(false);
-      return;
-    }
-
-    const fetchChatData = async () => {
-      try {
-        setIsLoadingChat(true);
-        const response = await fetch(`/api/chat?id=${chatId}`);
-
-        if (!response.ok) {
-          setError(
-            response.status === 404 ? "Chat not found" : "Failed to load chat"
-          );
-          return;
-        }
-
-        const data: ChatData = await response.json();
-
-        const formattedMessages = data.messages.map((msg, index) => ({
-          id: `${chatId}-${index}`,
-          role: msg.role,
-          content: msg.content,
-          createdAt: new Date(msg.timestamp),
-        }));
-
+    if (swrError) {
+      setError(swrError.message);
+    } else if (chatData && chatData.messages) {
+      const formattedMessages = chatData.messages.map((msg, index) => ({
+        id: `${chatId}-${index}`,
+        role: msg.role,
+        content: msg.content,
+        createdAt: new Date(msg.timestamp),
+      }));
+      
+      // Only set messages if they're different to avoid infinite re-renders
+      if (messages.length === 0 || messages[0]?.id !== `${chatId}-0`) {
         setMessages(formattedMessages);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching chat:", err);
-        setError("Failed to load chat");
-      } finally {
-        setIsLoadingChat(false);
+        setError(null); // Clear any previous errors
       }
-    };
-
-    fetchChatData();
-  }, [isSignedIn, chatId, setMessages]);
+    }
+  }, [swrError, chatData, chatId, messages, setMessages]);
 
   if (!isSignedIn) {
     return null;

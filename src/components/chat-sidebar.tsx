@@ -33,6 +33,7 @@ import {
   Trash2,
   Clock,
 } from "lucide-react";
+import Image from "next/image";
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -147,6 +148,18 @@ export function ChatSidebar() {
   return (
     <Sidebar className="w-64 bg-[#0f0f0f] border-r border-gray-800/50">
       <SidebarHeader className="px-3 py-4">
+        {/* ChatGPT Branding */}
+        <div className="flex items-center mb-4">
+          <Image
+            src="/chatgpt.svg"
+            alt="ChatGPT"
+            width={24}
+            height={24}
+            className="mr-3 brightness-0 invert"
+          />
+          <span className="text-white font-medium text-lg">ChatGPT</span>
+        </div>
+        
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>

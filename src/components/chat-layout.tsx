@@ -39,15 +39,13 @@ export default function ChatLayout({
             </div>
           )}
           {/* Input below welcome, centered horizontally */}
-          <div className="w-full flex justify-center mt-6">
-            <div className="w-full max-w-xl">
-              <ChatInput
-                input={input}
-                isLoading={isLoading}
-                onInputChange={onInputChange}
-                onSubmit={onSubmit}
-              />
-            </div>
+          <div className="w-full">
+            <ChatInput
+              input={input}
+              isLoading={isLoading}
+              onInputChange={onInputChange}
+              onSubmit={onSubmit}
+            />
           </div>
         </div>
       ) : (
