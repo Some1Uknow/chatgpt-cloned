@@ -3,6 +3,23 @@ import { useRouter } from "next/navigation";
 import { useChat } from "ai/react";
 import { FileAttachment } from "@/components/file-upload-dropdown";
 
+const getContentTypeForAttachment = (type: string): string => {
+  switch (type) {
+    case "image":
+      return "image/*";
+    case "pdf":
+      return "application/pdf";
+    case "doc":
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case "txt":
+      return "text/plain";
+    case "csv":
+      return "text/csv";
+    default:
+      return "application/octet-stream";
+  }
+};
+
 interface UseChatWithAttachmentsProps {
   chatId?: string;
   onAttachmentChange?: (attachments: FileAttachment[]) => void;
@@ -187,7 +204,7 @@ export function useChatWithAttachments({ chatId, onAttachmentChange }: UseChatWi
     // Convert attachments to AI SDK format
     const experimental_attachments = attachments.map((attachment) => ({
       name: attachment.name,
-      contentType: attachment.type === "image" ? "image/*" : "application/pdf",
+      contentType: getContentTypeForAttachment(attachment.type),
       url: attachment.url,
     }));
 

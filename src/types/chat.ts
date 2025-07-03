@@ -4,11 +4,11 @@ export interface ChatMessage {
   timestamp: Date;
   imageUrl?: string;
   fileName?: string;
-  fileType?: "image" | "pdf";
+  fileType?: "image" | "pdf" | "doc" | "txt" | "csv";
   attachments?: Array<{
     url: string;
     name: string;
-    type: "image" | "pdf";
+    type: "image" | "pdf" | "doc" | "txt" | "csv";
   }>;
 }
 
@@ -33,6 +33,6 @@ export interface UIMessage {
   createdAt?: Date;
   imageUrl?: string;
   fileName?: string;
-  fileType?: "image" | "pdf";
+  fileType?: "image" | "pdf" | "doc" | "txt" | "csv";
   experimental_attachments?: ExperimentalAttachment[];
 }

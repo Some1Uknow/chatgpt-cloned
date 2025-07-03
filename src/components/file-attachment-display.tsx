@@ -1,8 +1,8 @@
-import { Image, FileText, X } from "lucide-react";
+import { Image, FileText, X, File, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface FileAttachment {
-  type: 'image' | 'pdf';
+  type: 'image' | 'pdf' | 'doc' | 'txt' | 'csv';
   url: string;
   name: string;
   size: number;
@@ -28,6 +28,40 @@ export default function FileAttachmentDisplay({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getFileIcon = (type: string) => {
+    switch (type) {
+      case 'image':
+        return <Image className="w-4 h-4 mr-2 flex-shrink-0" />;
+      case 'pdf':
+        return <FileText className="w-4 h-4 mr-2 flex-shrink-0" />;
+      case 'doc':
+        return <FileText className="w-4 h-4 mr-2 flex-shrink-0" />;
+      case 'txt':
+        return <File className="w-4 h-4 mr-2 flex-shrink-0" />;
+      case 'csv':
+        return <BarChart3 className="w-4 h-4 mr-2 flex-shrink-0" />;
+      default:
+        return <File className="w-4 h-4 mr-2 flex-shrink-0" />;
+    }
+  };
+
+  const getFileTypeLabel = (type: string) => {
+    switch (type) {
+      case 'image':
+        return 'Image';
+      case 'pdf':
+        return 'PDF';
+      case 'doc':
+        return 'Document';
+      case 'txt':
+        return 'Text File';
+      case 'csv':
+        return 'CSV';
+      default:
+        return 'File';
+    }
+  };
+
   if (attachments.length === 0) return null;
 
   return (
@@ -37,27 +71,15 @@ export default function FileAttachmentDisplay({
           key={index}
           className="flex items-center bg-[#404040] rounded-lg p-2 text-white/80 text-sm max-w-xs"
         >
-          {attachment.type === 'image' ? (
-            <div className="flex items-center flex-1 min-w-0">
-              <Image className="w-4 h-4 mr-2 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="truncate font-medium">{attachment.name}</div>
-                <div className="text-xs text-white/60">
-                  {formatFileSize(attachment.size)}
-                </div>
+          <div className="flex items-center flex-1 min-w-0">
+            {getFileIcon(attachment.type)}
+            <div className="flex-1 min-w-0">
+              <div className="truncate font-medium">{attachment.name}</div>
+              <div className="text-xs text-white/60">
+                {getFileTypeLabel(attachment.type)} • {formatFileSize(attachment.size)}
               </div>
             </div>
-          ) : (
-            <div className="flex items-center flex-1 min-w-0">
-              <FileText className="w-4 h-4 mr-2 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="truncate font-medium">{attachment.name}</div>
-                <div className="text-xs text-white/60">
-                  {formatFileSize(attachment.size)}
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
           
           {showRemove && onRemove && (
             <Button

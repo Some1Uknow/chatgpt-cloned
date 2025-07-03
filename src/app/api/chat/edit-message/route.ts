@@ -128,11 +128,12 @@ export async function PUT(req: NextRequest) {
                 type: "image",
                 image: attachment.url,
               });
-            } else if (attachment.type === "pdf") {
-              // For PDFs, we should have extracted text content
+            } else if (attachment.type === "pdf" || attachment.type === "doc" || attachment.type === "txt" || attachment.type === "csv") {
+              // For text-based files, we should have extracted text content
+              const fileTypeLabel = attachment.type.toUpperCase();
               content.push({
                 type: "text",
-                text: `PDF Content from ${attachment.name}`,
+                text: `${fileTypeLabel} Content from ${attachment.name}`,
               });
             }
           }

@@ -8,10 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Image, FileText, Loader2 } from "lucide-react";
+import { Plus, Image, FileText, Loader2, File } from "lucide-react";
 
 export interface FileAttachment {
-  type: 'image' | 'pdf';
+  type: 'image' | 'pdf' | 'doc' | 'txt' | 'csv';
   url: string;
   name: string;
   size: number;
@@ -26,8 +26,11 @@ export default function FileUploadDropdown({ onFileUpload }: FileUploadDropdownP
   const [isUploading, setIsUploading] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const txtInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = async (file: File, type: 'image' | 'pdf') => {
+  const handleFileUpload = async (file: File, type: 'image' | 'pdf' | 'doc' | 'txt' | 'csv') => {
     setIsUploading(true);
     
     try {
@@ -69,6 +72,18 @@ export default function FileUploadDropdown({ onFileUpload }: FileUploadDropdownP
     pdfInputRef.current?.click();
   };
 
+  const handleDocClick = () => {
+    docInputRef.current?.click();
+  };
+
+  const handleTxtClick = () => {
+    txtInputRef.current?.click();
+  };
+
+  const handleCsvClick = () => {
+    csvInputRef.current?.click();
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -96,6 +111,56 @@ export default function FileUploadDropdown({ onFileUpload }: FileUploadDropdownP
         return;
       }
       handleFileUpload(file, 'pdf');
+    }
+  };
+
+  const handleDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const validTypes = [
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/msword'
+      ];
+      if (!validTypes.includes(file.type)) {
+        alert('Please select a Word document (.doc or .docx)');
+        return;
+      }
+      if (file.size > 25 * 1024 * 1024) { // 25MB limit
+        alert('Document size must be less than 25MB');
+        return;
+      }
+      handleFileUpload(file, 'doc');
+    }
+  };
+
+  const handleTxtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'text/plain') {
+        alert('Please select a text file (.txt)');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        alert('Text file size must be less than 10MB');
+        return;
+      }
+      handleFileUpload(file, 'txt');
+    }
+  };
+
+  const handleCsvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const validTypes = ['text/csv', 'application/vnd.ms-excel'];
+      if (!validTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.csv')) {
+        alert('Please select a CSV file');
+        return;
+      }
+      if (file.size > 25 * 1024 * 1024) { // 25MB limit
+        alert('CSV file size must be less than 25MB');
+        return;
+      }
+      handleFileUpload(file, 'csv');
     }
   };
 
@@ -135,6 +200,27 @@ export default function FileUploadDropdown({ onFileUpload }: FileUploadDropdownP
             <FileText className="w-4 h-4 mr-2" />
             Upload PDF
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handleDocClick}
+            className="cursor-pointer hover:bg-[#404040] focus:bg-[#404040]"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Upload Document
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handleTxtClick}
+            className="cursor-pointer hover:bg-[#404040] focus:bg-[#404040]"
+          >
+            <File className="w-4 h-4 mr-2" />
+            Upload Text File
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handleCsvClick}
+            className="cursor-pointer hover:bg-[#404040] focus:bg-[#404040]"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            Upload CSV
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -153,6 +239,30 @@ export default function FileUploadDropdown({ onFileUpload }: FileUploadDropdownP
         onChange={handlePdfChange}
         className="hidden"
         aria-label="Upload PDF file"
+      />
+      <input
+        ref={docInputRef}
+        type="file"
+        accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        onChange={handleDocChange}
+        className="hidden"
+        aria-label="Upload document file"
+      />
+      <input
+        ref={txtInputRef}
+        type="file"
+        accept=".txt,text/plain"
+        onChange={handleTxtChange}
+        className="hidden"
+        aria-label="Upload text file"
+      />
+      <input
+        ref={csvInputRef}
+        type="file"
+        accept=".csv,text/csv,application/vnd.ms-excel"
+        onChange={handleCsvChange}
+        className="hidden"
+        aria-label="Upload CSV file"
       />
     </>
   );

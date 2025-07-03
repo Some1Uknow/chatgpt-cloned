@@ -196,7 +196,15 @@ export async function POST(req: NextRequest) {
 
         // Add custom attachments format
         if (attachments && attachments.length > 0) {
+          console.log('Processing attachments:', attachments);
           for (const attachment of attachments) {
+            console.log('Processing attachment:', { 
+              name: attachment.name, 
+              type: attachment.type, 
+              hasTextContent: !!attachment.textContent,
+              textContentLength: attachment.textContent?.length || 0
+            });
+            
             if (attachment.type === "image") {
               // Check if image is already in content
               const hasImage = content.some(
@@ -208,11 +216,18 @@ export async function POST(req: NextRequest) {
                   image: attachment.url,
                 });
               }
-            } else if (attachment.type === "pdf" && attachment.textContent) {
-              // For PDFs, add the extracted text content
+            } else if (attachment.textContent) {
+              // For files with text content (PDF, TXT, CSV, DOC)
+              const fileTypeLabel = attachment.type.toUpperCase();
+              const textToAdd = `${fileTypeLabel} Content from ${attachment.name}:\n${attachment.textContent}`;
+              console.log('Adding text content to AI:', { 
+                fileType: fileTypeLabel, 
+                fileName: attachment.name, 
+                textLength: textToAdd.length 
+              });
               content.push({
                 type: "text",
-                text: `PDF Content from ${attachment.name}:\n${attachment.textContent}`,
+                text: textToAdd,
               });
             }
           }
@@ -230,6 +245,8 @@ export async function POST(req: NextRequest) {
       } as CoreMessage;
     }
   );
+
+  console.log('Final processed messages for AI:', JSON.stringify(processedMessages, null, 2));
 
   const aiStream = streamText({
     model: mem0("gpt-4o", { user_id: userId }),

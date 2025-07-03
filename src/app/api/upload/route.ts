@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
     const fileUrl = `https://ucarecdn.com/${uploadData.file}/`;
 
-    // For PDFs, extract text content
+    // Extract text content for various file types
     let textContent = '';
     if (type === 'pdf') {
       try {
@@ -76,6 +76,46 @@ export async function POST(req: NextRequest) {
       } catch (error) {
         console.error('PDF parsing error:', error);
         // Continue without text content if parsing fails
+      }
+    } else if (type === 'txt') {
+      try {
+        console.log('Reading text file...');
+        textContent = await file.text();
+        console.log('Text file content extracted, length:', textContent.length);
+      } catch (error) {
+        console.error('Text file reading error:', error);
+        // Continue without text content if reading fails
+      }
+    } else if (type === 'csv') {
+      try {
+        console.log('Reading CSV file...');
+        const csvContent = await file.text();
+        textContent = `CSV Data:\n${csvContent}`;
+        console.log('CSV content extracted, length:', textContent.length);
+      } catch (error) {
+        console.error('CSV reading error:', error);
+        // Continue without text content if reading fails
+      }
+    } else if (type === 'doc') {
+      try {
+        console.log('Processing document file...');
+        // Use mammoth for .docx files
+        if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+          const mammoth = (await import('mammoth')).default;
+          const arrayBuffer = await file.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const result = await mammoth.extractRawText({ buffer });
+          textContent = result.value;
+          console.log('Document text extracted using mammoth, length:', textContent.length);
+        } else {
+          // For .doc files, just provide basic info
+          textContent = `Document file: ${file.name} (${file.size} bytes)`;
+          console.log('Document info extracted (basic)');
+        }
+      } catch (error) {
+        console.error('Document processing error:', error);
+        // Fallback to basic info
+        textContent = `Document file: ${file.name} (${file.size} bytes)`;
       }
     }
 

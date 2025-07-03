@@ -2,6 +2,23 @@ import { useEffect } from "react";
 import useSWR from "swr";
 import { ChatData, UIMessage } from "@/types/chat";
 
+const getContentType = (type: string): string => {
+  switch (type) {
+    case "image":
+      return "image/*";
+    case "pdf":
+      return "application/pdf";
+    case "doc":
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case "txt":
+      return "text/plain";
+    case "csv":
+      return "text/csv";
+    default:
+      return "application/octet-stream";
+  }
+};
+
 // Fetcher function for SWR
 const fetcher = async (url: string): Promise<ChatData> => {
   const response = await fetch(url);
@@ -82,8 +99,7 @@ export function useChatData({
           ).experimental_attachments = msg.attachments.map(
             (attachment: { name: string; type: string; url: string }) => ({
               name: attachment.name,
-              contentType:
-                attachment.type === "image" ? "image/*" : "application/pdf",
+              contentType: getContentType(attachment.type),
               url: attachment.url,
             })
           );
