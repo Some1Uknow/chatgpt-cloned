@@ -169,6 +169,7 @@ export function useChatWithAttachments({ chatId, onAttachmentChange }: UseChatWi
                 }
               } catch (e) {
                 // If JSON parsing fails, try to extract quoted text
+                console.log('Failed to parse JSON from AI response:', e);
                 const textMatch = line.match(/^0:"(.*)"/);
                 if (textMatch) {
                   aiResponse += textMatch[1];

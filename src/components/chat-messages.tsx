@@ -2,7 +2,19 @@ import { UIMessage, ExperimentalAttachment } from "@/types/chat";
 import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit2, Check, X, FileText, File, BarChart3, Download } from "lucide-react";
+import {
+  Edit2,
+  Check,
+  X,
+  FileText,
+  File,
+  BarChart3,
+  Download,
+  Clipboard,
+} from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface ContentItem {
   type: "text" | "image";
@@ -14,6 +26,58 @@ interface ChatMessagesProps {
   messages: UIMessage[];
   isLoading?: boolean;
   onEditMessage?: (messageIndex: number, newContent: string) => void;
+}
+
+interface CodeBlockProps {
+  inline?: boolean;
+  className?: string;
+  children: React.ReactNode;
+  [key: string]: any;
+}
+
+function CodeBlock({ inline, className, children, ...props }: CodeBlockProps) {
+  const [copied, setCopied] = useState(false);
+  const match = /language-(\w+)/.exec(className || "");
+  const lang = match ? match[1] : "";
+  const code = String(children).replace(/\n$/, "");
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (inline) {
+    return (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
+  }
+
+  return (
+    <div className="bg-[#0d1117] rounded-lg my-4 overflow-hidden">
+      <div className="flex justify-between items-center bg-[#161b22] px-3 py-1 border-b border-[#30363d]">
+        <span className="text-[#8b949e] text-sm">{lang || "code"}</span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center text-[#8b949e] hover:text-white text-xs"
+        >
+          <Clipboard className="w-4 h-4 mr-1" />
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <SyntaxHighlighter
+        style={vscDarkPlus}
+        language={lang}
+        PreTag="div"
+        customStyle={{ background: "transparent", margin: 0, padding: "1rem" }}
+        {...props}
+      >
+        {code}
+      </SyntaxHighlighter>
+    </div>
+  );
 }
 
 export default function ChatMessages({
@@ -62,17 +126,21 @@ export default function ChatMessages({
   };
 
   const renderContent = (content: string | ContentItem[]) => {
+    const components = {
+      code: CodeBlock,
+    };
+
     if (typeof content === "string") {
-      return <p className="whitespace-pre-wrap">{content}</p>;
+      return <ReactMarkdown components={components}>{content}</ReactMarkdown>;
     }
 
     if (Array.isArray(content)) {
       return content.map((item, index) => {
         if (item.type === "text") {
           return (
-            <p key={index} className="whitespace-pre-wrap">
+            <ReactMarkdown key={index} components={components}>
               {item.text}
-            </p>
+            </ReactMarkdown>
           );
         }
         if (item.type === "image") {
@@ -91,7 +159,9 @@ export default function ChatMessages({
       });
     }
 
-    return <p className="whitespace-pre-wrap">{String(content)}</p>;
+    return (
+      <ReactMarkdown components={components}>{String(content)}</ReactMarkdown>
+    );
   };
 
   return (
@@ -203,8 +273,9 @@ export default function ChatMessages({
                   message.experimental_attachments.length > 0 && (
                     <div className="mb-2">
                       {message.experimental_attachments
-                        .filter((attachment: ExperimentalAttachment) =>
-                          !attachment.contentType?.startsWith("image/")
+                        .filter(
+                          (attachment: ExperimentalAttachment) =>
+                            !attachment.contentType?.startsWith("image/")
                         )
                         .map(
                           (
@@ -220,7 +291,8 @@ export default function ChatMessages({
                                   <FileText className="w-5 h-5 mr-3 flex-shrink-0 text-red-400" />
                                 ) : attachment.contentType?.includes("text") ? (
                                   <File className="w-5 h-5 mr-3 flex-shrink-0 text-blue-400" />
-                                ) : attachment.contentType?.includes("csv") || attachment.contentType?.includes("excel") ? (
+                                ) : attachment.contentType?.includes("csv") ||
+                                  attachment.contentType?.includes("excel") ? (
                                   <BarChart3 className="w-5 h-5 mr-3 flex-shrink-0 text-green-400" />
                                 ) : (
                                   <FileText className="w-5 h-5 mr-3 flex-shrink-0 text-gray-400" />
@@ -230,18 +302,24 @@ export default function ChatMessages({
                                     {attachment.name || "Attachment"}
                                   </div>
                                   <div className="text-xs text-white/60">
-                                    {attachment.contentType?.includes("pdf") ? "PDF Document" :
-                                     attachment.contentType?.includes("text") ? "Text File" :
-                                     attachment.contentType?.includes("csv") ? "CSV File" :
-                                     attachment.contentType?.includes("doc") ? "Document" :
-                                     "File"}
+                                    {attachment.contentType?.includes("pdf")
+                                      ? "PDF Document"
+                                      : attachment.contentType?.includes("text")
+                                      ? "Text File"
+                                      : attachment.contentType?.includes("csv")
+                                      ? "CSV File"
+                                      : attachment.contentType?.includes("doc")
+                                      ? "Document"
+                                      : "File"}
                                   </div>
                                 </div>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => window.open(attachment.url, '_blank')}
+                                onClick={() =>
+                                  window.open(attachment.url, "_blank")
+                                }
                                 className="ml-2 h-8 w-8 p-0 text-white/60 hover:text-white/80"
                                 title="Download file"
                               >

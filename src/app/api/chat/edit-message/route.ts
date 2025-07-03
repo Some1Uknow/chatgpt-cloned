@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { streamText, CoreMessage } from "ai";
 import { createMem0, retrieveMemories } from "@mem0/vercel-ai-provider";
-import { openai } from "@ai-sdk/openai";
 import dbConnect from "@/lib/mongodb";
 import Chat from "@/models/Chat";
 
