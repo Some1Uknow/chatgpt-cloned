@@ -14,6 +14,7 @@ export function useChatWithAttachments({ chatId, onAttachmentChange }: UseChatWi
   const [error, setError] = useState<string | null>(null);
   const [isNewChat, setIsNewChat] = useState<boolean>(!chatId);
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const [isEditingMessage, setIsEditingMessage] = useState<boolean>(false);
   const newChatIdRef = useRef<string | null>(null);
 
   const {
@@ -60,6 +61,125 @@ export function useChatWithAttachments({ chatId, onAttachmentChange }: UseChatWi
     onAttachmentChange?.(updatedAttachments);
   };
 
+  const handleEditMessage = async (messageIndex: number, newContent: string) => {
+    if (!chatId) return;
+
+    try {
+      setError(null);
+      setIsEditingMessage(true);
+      
+      // Find the actual message index in the full messages array (including system messages)
+      const displayMessages = messages.filter(msg => msg.role === 'user' || msg.role === 'assistant');
+      const messageToEdit = displayMessages[messageIndex];
+      
+      if (!messageToEdit) {
+        setError("Message not found");
+        setIsEditingMessage(false);
+        return;
+      }
+
+      // Find the actual index in the full messages array
+      const actualMessageIndex = messages.findIndex(msg => msg.id === messageToEdit.id);
+      
+      if (actualMessageIndex === -1) {
+        setError("Message not found");
+        setIsEditingMessage(false);
+        return;
+      }
+
+      // Update the message locally first
+      const updatedMessages = [...messages];
+      updatedMessages[actualMessageIndex] = {
+        ...updatedMessages[actualMessageIndex],
+        content: newContent,
+      };
+      
+      // Remove messages after the edited one
+      const messagesToKeep = updatedMessages.slice(0, actualMessageIndex + 1);
+      setMessages(messagesToKeep);
+
+      // Create a temporary message for the AI response with loading state
+      const tempAiMessage = {
+        id: `ai-${Date.now()}`,
+        role: 'assistant' as const,
+        content: '',
+        createdAt: new Date(),
+      };
+      
+      // Add the empty AI message to show it's responding
+      setMessages([...messagesToKeep, tempAiMessage]);
+
+      // Make the API call to edit the message and get new AI response
+      const response = await fetch(`/api/chat/edit-message`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatId,
+          messageIndex: actualMessageIndex,
+          newContent,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to edit message');
+      }
+
+      // Parse the streaming response using the AI SDK data stream format
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let aiResponse = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value, { stream: true });
+          
+          // Parse the data stream format from AI SDK
+          const lines = chunk.split('\n').filter(line => line.trim());
+          for (const line of lines) {
+            // Look for text content in the stream format
+            if (line.startsWith('0:')) {
+              try {
+                // Extract the JSON content after the colon
+                const jsonStr = line.substring(2);
+                const parsed = JSON.parse(jsonStr);
+                if (typeof parsed === 'string') {
+                  aiResponse += parsed;
+                }
+              } catch (e) {
+                // If JSON parsing fails, try to extract quoted text
+                const textMatch = line.match(/^0:"(.*)"/);
+                if (textMatch) {
+                  aiResponse += textMatch[1];
+                }
+              }
+            }
+            
+            // Update the AI message with the accumulated response
+            if (aiResponse) {
+              const updatedAiMessage = {
+                ...tempAiMessage,
+                content: aiResponse,
+              };
+              
+              setMessages([...messagesToKeep, updatedAiMessage]);
+            }
+          }
+        }
+      }
+      
+      setIsEditingMessage(false);
+    } catch (error) {
+      console.error('Error editing message:', error);
+      setError('Failed to edit message. Please try again.');
+      setIsEditingMessage(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if ((!input.trim() && attachments.length === 0) || isLoading) return;
@@ -97,11 +217,12 @@ export function useChatWithAttachments({ chatId, onAttachmentChange }: UseChatWi
     input,
     handleInputChange,
     handleSubmit,
-    isLoading,
+    isLoading: isLoading || isEditingMessage,
     setMessages,
     attachments,
     handleFileUpload,
     handleRemoveAttachment,
+    handleEditMessage,
     error,
     setError,
     isNewChat,

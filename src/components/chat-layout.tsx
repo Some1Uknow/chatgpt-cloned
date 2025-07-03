@@ -17,6 +17,7 @@ interface ChatLayoutProps {
   attachments?: FileAttachment[];
   onFileUpload?: (attachment: FileAttachment) => void;
   onRemoveAttachment?: (index: number) => void;
+  onEditMessage?: (messageIndex: number, newContent: string) => void;
 }
 
 export default function ChatLayout({
@@ -31,6 +32,7 @@ export default function ChatLayout({
   attachments = [],
   onFileUpload,
   onRemoveAttachment,
+  onEditMessage,
 }: ChatLayoutProps) {
   // If inputPosition is center, input is below welcome, else fixed at bottom
   const showWelcomeMessage = messages.length === 0 && showWelcome;
@@ -63,7 +65,7 @@ export default function ChatLayout({
         <div className="flex-1 flex flex-col px-6 bg-[#212121] relative min-h-0">
           <div className="flex-1 min-h-0 overflow-y-auto chat-messages-scroll-area pb-[calc(56px+1rem)]">
             {messages.length > 0 ? (
-              <ChatMessages messages={messages} isLoading={isLoading} />
+              <ChatMessages messages={messages} isLoading={isLoading} onEditMessage={onEditMessage} />
             ) : showWelcomeMessage ? (
               <WelcomeMessage title={welcomeTitle} />
             ) : null}

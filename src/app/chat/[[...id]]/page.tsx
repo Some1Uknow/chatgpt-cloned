@@ -28,6 +28,7 @@ export default function ChatPage() {
     attachments,
     handleFileUpload,
     handleRemoveAttachment,
+    handleEditMessage,
     isNewChat,
     setIsNewChat,
     isTransitioning,
@@ -89,6 +90,7 @@ export default function ChatPage() {
         attachments={attachments}
         onFileUpload={handleFileUpload}
         onRemoveAttachment={handleRemoveAttachment}
+        onEditMessage={handleEditMessage}
       />
     </div>
   );
