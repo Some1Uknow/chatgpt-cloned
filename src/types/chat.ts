@@ -36,3 +36,15 @@ export interface UIMessage {
   fileType?: "image" | "pdf" | "doc" | "txt" | "csv";
   experimental_attachments?: ExperimentalAttachment[];
 }
+
+export interface ContentItem {
+  type: "text" | "image";
+  text?: string;
+  image?: string;
+}
+
+export interface ChatMessagesProps {
+  messages: UIMessage[];
+  isLoading?: boolean;
+  onEditMessage?: (messageIndex: number, newContent: string) => void;
+}

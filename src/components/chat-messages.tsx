@@ -1,84 +1,11 @@
-import { UIMessage, ExperimentalAttachment } from "@/types/chat";
-import Image from "next/image";
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import {
-  Edit2,
-  Check,
-  X,
-  FileText,
-  File,
-  BarChart3,
-  Download,
-  Clipboard,
-} from "lucide-react";
+import { Edit2, Check, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-
-interface ContentItem {
-  type: "text" | "image";
-  text?: string;
-  image?: string;
-}
-
-interface ChatMessagesProps {
-  messages: UIMessage[];
-  isLoading?: boolean;
-  onEditMessage?: (messageIndex: number, newContent: string) => void;
-}
-
-interface CodeBlockProps {
-  inline?: boolean;
-  className?: string;
-  children: React.ReactNode;
-  [key: string]: any;
-}
-
-function CodeBlock({ inline, className, children, ...props }: CodeBlockProps) {
-  const [copied, setCopied] = useState(false);
-  const match = /language-(\w+)/.exec(className || "");
-  const lang = match ? match[1] : "";
-  const code = String(children).replace(/\n$/, "");
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  if (inline) {
-    return (
-      <code className={className} {...props}>
-        {children}
-      </code>
-    );
-  }
-
-  return (
-    <div className="bg-[#0d1117] rounded-lg my-4 overflow-hidden">
-      <div className="flex justify-between items-center bg-[#161b22] px-3 py-1 border-b border-[#30363d]">
-        <span className="text-[#8b949e] text-sm">{lang || "code"}</span>
-        <button
-          onClick={handleCopy}
-          className="flex items-center text-[#8b949e] hover:text-white text-xs"
-        >
-          <Clipboard className="w-4 h-4 mr-1" />
-          {copied ? "Copied" : "Copy"}
-        </button>
-      </div>
-      <SyntaxHighlighter
-        style={vscDarkPlus}
-        language={lang}
-        PreTag="div"
-        customStyle={{ background: "transparent", margin: 0, padding: "1rem" }}
-        {...props}
-      >
-        {code}
-      </SyntaxHighlighter>
-    </div>
-  );
-}
+import { ChatMessagesProps, ContentItem } from "@/types/chat";
+import { CodeBlock } from "./messages/code-block";
+import { MessageContent } from "./messages/message-content";
 
 export default function ChatMessages({
   messages,
@@ -131,6 +58,7 @@ export default function ChatMessages({
     };
 
     if (typeof content === "string") {
+      // @ts-expect-error ignore
       return <ReactMarkdown components={components}>{content}</ReactMarkdown>;
     }
 
@@ -138,6 +66,7 @@ export default function ChatMessages({
       return content.map((item, index) => {
         if (item.type === "text") {
           return (
+               // @ts-expect-error ignore
             <ReactMarkdown key={index} components={components}>
               {item.text}
             </ReactMarkdown>
@@ -160,6 +89,7 @@ export default function ChatMessages({
     }
 
     return (
+         // @ts-expect-error ignore
       <ReactMarkdown components={components}>{String(content)}</ReactMarkdown>
     );
   };
@@ -224,115 +154,7 @@ export default function ChatMessages({
                 </div>
               </div>
             ) : (
-              <>
-                {/* Display image if present */}
-                {message.imageUrl && (
-                  <div className="mb-2">
-                    <Image
-                      src={message.imageUrl}
-                      alt={message.fileName || "Uploaded image"}
-                      className="rounded-lg max-w-full h-auto max-h-64 object-contain"
-                      fill
-                    />
-                    {message.fileName && (
-                      <p className="text-xs text-white/60 mt-1">
-                        {message.fileName}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Display experimental attachments if present */}
-                {message.experimental_attachments &&
-                  message.experimental_attachments.length > 0 && (
-                    <div className="mb-2">
-                      {message.experimental_attachments
-                        .filter((attachment: ExperimentalAttachment) =>
-                          attachment.contentType?.startsWith("image/")
-                        )
-                        .map(
-                          (
-                            attachment: ExperimentalAttachment,
-                            attachmentIndex: number
-                          ) => (
-                            <Image
-                              key={`${message.id}-${attachmentIndex}`}
-                              src={attachment.url}
-                              alt={attachment.name || "Attachment"}
-                              className="max-w-full h-auto rounded-lg"
-                              width={500}
-                              height={300}
-                            />
-                          )
-                        )}
-                    </div>
-                  )}
-
-                {/* Display non-image experimental attachments */}
-                {message.experimental_attachments &&
-                  message.experimental_attachments.length > 0 && (
-                    <div className="mb-2">
-                      {message.experimental_attachments
-                        .filter(
-                          (attachment: ExperimentalAttachment) =>
-                            !attachment.contentType?.startsWith("image/")
-                        )
-                        .map(
-                          (
-                            attachment: ExperimentalAttachment,
-                            attachmentIndex: number
-                          ) => (
-                            <div
-                              key={`${message.id}-file-${attachmentIndex}`}
-                              className="flex items-center bg-white/10 rounded-lg p-3 text-white/80 text-sm max-w-md mb-2"
-                            >
-                              <div className="flex items-center flex-1 min-w-0">
-                                {attachment.contentType?.includes("pdf") ? (
-                                  <FileText className="w-5 h-5 mr-3 flex-shrink-0 text-red-400" />
-                                ) : attachment.contentType?.includes("text") ? (
-                                  <File className="w-5 h-5 mr-3 flex-shrink-0 text-blue-400" />
-                                ) : attachment.contentType?.includes("csv") ||
-                                  attachment.contentType?.includes("excel") ? (
-                                  <BarChart3 className="w-5 h-5 mr-3 flex-shrink-0 text-green-400" />
-                                ) : (
-                                  <FileText className="w-5 h-5 mr-3 flex-shrink-0 text-gray-400" />
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <div className="truncate font-medium">
-                                    {attachment.name || "Attachment"}
-                                  </div>
-                                  <div className="text-xs text-white/60">
-                                    {attachment.contentType?.includes("pdf")
-                                      ? "PDF Document"
-                                      : attachment.contentType?.includes("text")
-                                      ? "Text File"
-                                      : attachment.contentType?.includes("csv")
-                                      ? "CSV File"
-                                      : attachment.contentType?.includes("doc")
-                                      ? "Document"
-                                      : "File"}
-                                  </div>
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  window.open(attachment.url, "_blank")
-                                }
-                                className="ml-2 h-8 w-8 p-0 text-white/60 hover:text-white/80"
-                                title="Download file"
-                              >
-                                <Download className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          )
-                        )}
-                    </div>
-                  )}
-
-                {renderContent(message.content)}
-              </>
+              <MessageContent message={message} renderContent={renderContent} />
             )}
           </div>
         </div>
