@@ -82,8 +82,23 @@ export function ChatSidebar() {
     router.push("/chat");
   };
 
-  // Delete chat
+  // Delete chat with optimistic updates
   const handleDeleteChat = async (chatId: string) => {
+    // Optimistic update: redirect immediately if we're viewing the deleted chat
+    if (pathname === `/chat/${chatId}`) {
+      router.push("/chat");
+    }
+
+    // Optimistic update: immediately remove the chat from the UI
+    mutate(
+      (currentChats: ChatItem[] | undefined) => {
+        if (!currentChats) return currentChats;
+        return currentChats.filter((chat: ChatItem) => chat.chatId !== chatId);
+      },
+      false // Don't revalidate immediately
+    );
+
+    // Perform the actual deletion in the background
     try {
       const res = await fetch("/api/chat/delete", {
         method: "DELETE",
@@ -91,17 +106,15 @@ export function ChatSidebar() {
         body: JSON.stringify({ chatId }),
       });
 
-      if (res.ok) {
-        // If we're currently viewing the deleted chat, redirect to /chat
-        if (pathname === `/chat/${chatId}`) {
-          router.push("/chat");
-          return;
-        }
-        // Otherwise, just invalidate the cache to refresh the list
-        mutate();
+      if (!res.ok) {
+        // If the deletion failed, revert the optimistic update
+        console.error("Failed to delete chat:", await res.text());
+        mutate(); // Revalidate to restore the original state
       }
     } catch (error) {
       console.error("Error deleting chat:", error);
+      // Revert the optimistic update on error
+      mutate(); // Revalidate to restore the original state
     }
   };
 
