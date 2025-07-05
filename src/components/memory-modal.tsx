@@ -1,18 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Plus, Brain, RefreshCw, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {  Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Memory {
@@ -31,51 +21,33 @@ interface MemoryModalProps {
   onClose: () => void;
   memories: Memory[];
   onRefresh?: () => void;
+  onMemoryDeleted?: (memoryId: string) => void;
 }
 
-export default function MemoryModal({ open, onClose, memories, onRefresh }: MemoryModalProps) {
-  const [newMemory, setNewMemory] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+export default function MemoryModal({
+  open,
+  onClose,
+  memories,
+  onRefresh,
+  onMemoryDeleted,
+}: MemoryModalProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [optimisticMemories, setOptimisticMemories] =
+    useState<Memory[]>(memories);
 
-  const handleAddMemory = async () => {
-    if (!newMemory.trim()) {
-      toast.error("Please enter a memory");
-      return;
-    }
+  // Update optimistic memories when props change
+  useEffect(() => {
+    setOptimisticMemories(memories);
+  }, [memories]);
 
-    setIsAdding(true);
-    try {
-      const response = await fetch("/api/memory", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          memories: newMemory.trim(),
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to add memory");
-      }
-
-      setNewMemory("");
-      toast.success("Memory added successfully");
-      
-      // Refresh memories after adding
-      handleRefreshMemories();
-    } catch (error) {
-      console.error("Error adding memory:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to add memory");
-    } finally {
-      setIsAdding(false);
-    }
-  };
+ 
 
   const handleDeleteMemory = async (memoryId: string) => {
+    // Optimistic update - remove from UI immediately
+    setOptimisticMemories((prev) =>
+      prev.filter((memory) => memory.id !== memoryId)
+    );
+
     setDeleting(memoryId);
     try {
       const response = await fetch(`/api/memory?id=${memoryId}`, {
@@ -83,175 +55,130 @@ export default function MemoryModal({ open, onClose, memories, onRefresh }: Memo
       });
 
       if (!response.ok) {
+        // Revert optimistic update on error
+        setOptimisticMemories(memories);
         const error = await response.json();
         throw new Error(error.error || "Failed to delete memory");
       }
 
       toast.success("Memory deleted successfully");
-      // Refresh memories after deleting
-      handleRefreshMemories();
+      // Notify parent component of deletion
+      if (onMemoryDeleted) {
+        onMemoryDeleted(memoryId);
+      }
     } catch (error) {
       console.error("Error deleting memory:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to delete memory");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete memory"
+      );
     } finally {
       setDeleting(null);
     }
   };
 
-  const handleRefreshMemories = async () => {
-    if (onRefresh) {
-      setRefreshing(true);
-      try {
-        await onRefresh();
-      } catch (error) {
-        console.error("Error refreshing memories:", error);
-        toast.error("Failed to refresh memories");
-      } finally {
-        setRefreshing(false);
-      }
-    }
-  };
+  const handleDeleteAll = async () => {
+    // Implementation for delete all functionality
+    if (optimisticMemories.length === 0) return;
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "—";
+    const confirmed = window.confirm(
+      "Are you sure you want to delete all memories?"
+    );
+    if (!confirmed) return;
+
+    // Optimistic update - clear all memories
+    setOptimisticMemories([]);
+
     try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return "—";
+      // Delete all memories
+      for (const memory of memories) {
+        if (memory.id) {
+          await fetch(`/api/memory?id=${memory.id}`, {
+            method: "DELETE",
+          });
+        }
+      }
+
+      toast.success("All memories deleted successfully");
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setOptimisticMemories(memories);
+      console.error("Error deleting all memories:", error);
+      toast.error("Failed to delete all memories");
     }
-  };
-
-  const renderMemoryContent = () => {
-    if (memories.length === 0) {
-      return (
-        <div className="text-center py-12 text-muted-foreground">
-          <Brain className="mx-auto h-8 w-8 mb-3 opacity-50" />
-          <p className="text-sm">No memories found</p>
-          <p className="text-xs mt-1">Start chatting to build your AI memory!</p>
-        </div>
-      );
-    }
-
-    if (memories[0]?.loading) {
-      return (
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-3"></div>
-          <p className="text-sm text-muted-foreground">Loading memories...</p>
-        </div>
-      );
-    }
-
-    if (memories[0]?.error) {
-      return (
-        <div className="text-center py-12">
-          <p className="text-sm text-destructive mb-3">Error loading memories</p>
-          <Button variant="outline" size="sm" onClick={handleRefreshMemories}>
-            Try Again
-          </Button>
-        </div>
-      );
-    }
-
-    const memoryList = (
-      <div className="p-4 space-y-4">
-        {memories.map((memory, index) => (
-          <div key={memory.id || index} className="flex justify-between items-start gap-4">
-            <p className="text-sm pr-4 flex-1">{memory.memory || memory.text || "No content"}</p>
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(memory.created_at)}</p>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => handleDeleteMemory(memory.id!)}
-                disabled={deleting === memory.id}
-              >
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-
-    // Always use ScrollArea for consistent behavior and proper scrolling
-    return (
-      <ScrollArea className="border rounded-md w-full" style={{ height: '200px', maxHeight: '400px' }}>
-        {memoryList}
-      </ScrollArea>
-    );
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <Brain className="h-5 w-5" />
-            AI Memory
-          </DialogTitle>
-          <DialogDescription className="text-sm">
-            View and manage your AI assistant`&apos;`s memory for more personalized responses.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex-1 flex flex-col gap-6 min-h-0">
-          {/* Add Memory Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Plus className="h-4 w-4" />
-              Add Memory
-            </div>
-            <div className="flex gap-3">
-              <Textarea
-                placeholder="Enter something you want the AI to remember..."
-                value={newMemory}
-                onChange={(e) => setNewMemory(e.target.value)}
-                className="min-h-[80px] resize-none flex-1"
-              />
-              <Button
-                onClick={handleAddMemory}
-                disabled={isAdding || !newMemory.trim()}
-                className="shrink-0 self-end"
-              >
-                {isAdding ? "Adding..." : "Add"}
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Memories List */}
-          <div className="flex-1 min-h-0 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium">Your Memories ({memories.length})</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefreshMemories}
-                disabled={refreshing}
-                className="gap-2"
-              >
-                <RefreshCw className={`h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
-                {refreshing ? "Refreshing..." : "Refresh"}
-              </Button>
-            </div>
-            <div className="flex-1 min-h-0">
-              {renderMemoryContent()}
-            </div>
-          </div>
+      <DialogContent
+        showCloseButton={false}
+        className="bg-[#2f2f2f] border-[#4a4a4a] text-white w-[60vw] max-w-[60vw] rounded-lg"
+      >
+        <DialogTitle className="sr-only">Saved memories</DialogTitle>
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 pb-4">
+          <h2 className="text-xl font-semibold">Saved memories</h2>
         </div>
 
-        <div className="flex justify-end pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
+        {/* Subtitle */}
+        <div className="px-6 pb-6">
+          <p className="text-gray-300 text-sm">
+            ChatGPT tries to remember your recent chats, but it may forget
+            things over time. Saved memories are never forgotten.{" "}
+            <span className="text-blue-400 underline cursor-pointer">
+              Learn more
+            </span>
+          </p>
         </div>
+
+        {/* Memories List */}
+        <div className="px-6 pb-6 max-h-96 overflow-y-auto">
+          {optimisticMemories.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <p className="text-sm">No memories saved yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {optimisticMemories.map((memory, index) => (
+                <div
+                  key={memory.id || index}
+                  className="flex items-start justify-between group"
+                >
+                  <div className="flex-1 pr-4">
+                    <p className="text-sm text-gray-200 leading-relaxed">
+                      {memory.memory || memory.text || "No content"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteMemory(memory.id!)}
+                    disabled={deleting === memory.id}
+                    className="text-gray-500 hover:text-red-400 transition-colors"
+                  >
+                    {deleting === memory.id ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b border-red-400"></div>
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Delete All Button */}
+        {optimisticMemories.length > 0 && (
+          <div className="px-6 pb-6 flex justify-end">
+            <button
+              onClick={handleDeleteAll}
+              className="text-red-400 hover:text-red-300 transition-colors text-sm font-medium"
+            >
+              Delete all
+            </button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

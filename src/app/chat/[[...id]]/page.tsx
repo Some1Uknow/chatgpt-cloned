@@ -14,8 +14,12 @@ export default function ChatPage() {
   const { isSignedIn } = useAuthRedirect();
   const router = useRouter();
   const params = useParams();
-  const chatId = Array.isArray(params.id) ? params.id[0] : undefined;
   const [error, setError] = useState<string | null>(null);
+  
+  // Handle the case where there's no ID (new chat) or there's an ID (existing chat)
+  const chatId = Array.isArray(params.id) ? params.id[0] : params.id;
+  
+  // Don't redirect immediately - let the user stay at /chat until they submit their first message
 
   // Use custom hook for chat functionality with attachments
   const {
@@ -33,11 +37,12 @@ export default function ChatPage() {
     setIsNewChat,
     isTransitioning,
     setIsTransitioning,
+    currentChatId,
   } = useChatWithAttachments({ chatId });
 
   // Use our custom hook for fetching chat data
   const { isLoadingChat } = useChatData({
-    chatId,
+    chatId: currentChatId, // Use the current chat ID from the hook
     isSignedIn,
     isTransitioning,
     isNewChat,
@@ -48,7 +53,7 @@ export default function ChatPage() {
 
   // Use our custom hook for handling chat transitions
   useChatTransition({
-    chatId,
+    chatId: currentChatId, // Use the current chat ID from the hook
     isTransitioning,
     setIsTransitioning,
     setIsNewChat,

@@ -33,8 +33,10 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useChatList } from "@/hooks/use-chat-list";
+import { chatSidebarEvents } from "@/lib/chat-sidebar-events";
 
 interface ChatItem {
   chatId: string;
@@ -51,8 +53,6 @@ const navigationItems = [
 ];
 
 export function ChatSidebar() {
-  const [chats, setChats] = useState<ChatItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const pathname = usePathname();
@@ -63,27 +63,19 @@ export function ChatSidebar() {
     ? pathname.split("/chat/")[1]
     : null;
 
-  // Fetch chats from API
-  const fetchChats = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/chat-list");
-      if (res.ok) {
-        const data = await res.json();
-        setChats(data.chats || []);
-      }
-    } catch (e) {
-      console.error("Error fetching chats:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use custom hook for chat list with SWR
+  const { chats, isLoading: loading, mutate } = useChatList();
 
+  // Create a stable callback for the mutate function
+  const handleSidebarRefresh = useCallback(() => {
+    mutate();
+  }, [mutate]);
+
+  // Listen for sidebar refresh events
   useEffect(() => {
-    fetchChats();
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+    const unsubscribe = chatSidebarEvents.subscribe(handleSidebarRefresh);
+    return unsubscribe;
+  }, [handleSidebarRefresh]);
 
   // Start new chat: go to /chat for a fresh chat
   const handleNewChat = () => {
@@ -105,8 +97,8 @@ export function ChatSidebar() {
           router.push("/chat");
           return;
         }
-        // Otherwise, just refetch the chat list
-        fetchChats();
+        // Otherwise, just invalidate the cache to refresh the list
+        mutate();
       }
     } catch (error) {
       console.error("Error deleting chat:", error);
@@ -133,7 +125,7 @@ export function ChatSidebar() {
       if (res.ok) {
         setEditingChatId(null);
         setEditTitle("");
-        fetchChats();
+        mutate(); // Invalidate cache to refresh the list
       }
     } catch (error) {
       console.error("Error editing chat:", error);
@@ -226,7 +218,7 @@ export function ChatSidebar() {
                     No chats yet
                   </div>
                 ) : (
-                  chats.map((chat) => (
+                  chats.map((chat: ChatItem) => (
                     <SidebarMenuItem key={chat.chatId}>
                       <div
                         className={`flex items-center group hover:bg-gray-800/50 rounded-lg transition-colors duration-200 ${

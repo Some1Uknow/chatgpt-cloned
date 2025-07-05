@@ -58,7 +58,12 @@ export async function POST(req: NextRequest) {
   const url = new URL(req.url);
   let chatId = url.searchParams.get("id");
   const body = await req.json();
-  const { messages, attachments } = body;
+  const { messages, attachments, chatId: bodyChatId } = body;
+
+  // Use chatId from body if provided (for new chats), otherwise use URL param
+  if (bodyChatId) {
+    chatId = bodyChatId;
+  }
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: "Messages required" }, { status: 400 });
@@ -104,7 +109,10 @@ export async function POST(req: NextRequest) {
     const newMessage = createNewMessage(lastMessage, messageAttachments);
     chat.messages.push(newMessage);
   } else {
-    chatId = uuidv4();
+    // Use the chatId from the client, or generate a new one if not provided
+    if (!chatId) {
+      chatId = uuidv4();
+    }
     isFirstMessage = true;
     chat = new Chat({
       chatId,

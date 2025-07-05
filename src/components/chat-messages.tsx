@@ -39,6 +39,23 @@ export default function ChatMessages({
     }
   };
 
+  const hasAttachments = (message: {
+    imageUrl?: string;
+    fileName?: string;
+    experimental_attachments?: unknown[];
+    content: string | ContentItem[];
+  }) => {
+    // Check for various attachment types
+    return (
+      message.imageUrl ||
+      message.fileName ||
+      (message.experimental_attachments &&
+        message.experimental_attachments.length > 0) ||
+      (Array.isArray(message.content) &&
+        message.content.some((item: ContentItem) => item.type === "image"))
+    );
+  };
+
   const handleEditSave = () => {
     if (editingIndex !== null && onEditMessage && editContent.trim()) {
       onEditMessage(editingIndex, editContent.trim());
@@ -66,7 +83,7 @@ export default function ChatMessages({
       return content.map((item, index) => {
         if (item.type === "text") {
           return (
-               // @ts-expect-error ignore
+            // @ts-expect-error ignore
             <ReactMarkdown key={index} components={components}>
               {item.text}
             </ReactMarkdown>
@@ -89,7 +106,7 @@ export default function ChatMessages({
     }
 
     return (
-         // @ts-expect-error ignore
+      // @ts-expect-error ignore
       <ReactMarkdown components={components}>{String(content)}</ReactMarkdown>
     );
   };
@@ -101,61 +118,77 @@ export default function ChatMessages({
           key={message.id}
           className={`flex ${
             message.role === "user" ? "justify-end" : "justify-start"
-          }`}
+          } ${editingIndex === index ? "w-full" : ""}`}
         >
           <div
-            className={`max-w-[80%] rounded-lg px-4 py-2 text-white relative group ${
-              message.role === "user" ? "bg-white/10" : ""
-            }`}
+            className={`flex flex-col ${
+              message.role === "user" ? "items-end" : "items-start"
+            } group ${editingIndex === index ? "w-full" : "max-w-[80%]"}`}
           >
-            {/* Edit button for user messages */}
+            <div
+              className={`rounded-lg text-white relative ${
+                editingIndex === index
+                  ? "w-full"
+                  : `w-full px-4 py-2 ${
+                      message.role === "user" ? "bg-white/10" : ""
+                    }`
+              }`}
+            >
+              {/* Edit mode */}
+              {editingIndex === index ? (
+                <div className="space-y-2 w-full max-w-none">
+                  <div className="bg-white/10 rounded-lg">
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      className="w-full p-4 bg-transparent text-white placeholder-white/50 focus:outline-none resize-none"
+                      rows={3}
+                      placeholder="Edit your message..."
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleEditCancel}
+                      className="text-white/70 hover:text-white/90"
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleEditSave}
+                      className="bg-white text-black hover:bg-gray-100 rounded-full"
+                    >
+                      <Check className="w-4 h-4 mr-1" />
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <MessageContent
+                  message={message}
+                  renderContent={renderContent}
+                />
+              )}
+            </div>
+
+            {/* Edit button for user messages without attachments */}
             {message.role === "user" &&
               onEditMessage &&
-              editingIndex !== index && (
+              editingIndex !== index &&
+              !hasAttachments(message) && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-[#2f2f2f] hover:bg-[#404040] w-8 h-8 p-0"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity bg-transparent hover:bg-white/10 w-8 h-8 p-0 mt-1"
                   onClick={() => handleEditStart(index, message.content)}
                 >
                   <Edit2 className="w-3 h-3" />
                 </Button>
               )}
-
-            {/* Edit mode */}
-            {editingIndex === index ? (
-              <div className="space-y-2 w-full">
-                <textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="w-full p-2 bg-[#2f2f2f] border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  rows={3}
-                  placeholder="Edit your message..."
-                />
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleEditCancel}
-                    className="text-white/70 hover:text-white/90"
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleEditSave}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Check className="w-4 h-4 mr-1" />
-                    Send
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <MessageContent message={message} renderContent={renderContent} />
-            )}
           </div>
         </div>
       ))}

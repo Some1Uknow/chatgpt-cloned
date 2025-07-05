@@ -118,7 +118,7 @@ export function useChatData({
         setError(null); // Clear any previous errors
       }
     }
-  }, [swrError, chatData, chatId, messages, setMessages, setError, isNewChat]);
+  }, [swrError, chatData, chatId, isNewChat]); // Remove messages, setMessages, setError to prevent infinite loops
 
   return {
     isLoadingChat,
