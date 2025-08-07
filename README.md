@@ -1,17 +1,3 @@
-## ⚠️ **CRITICAL COPYRIGHT NOTICE** ⚠️
-
-**🚨 THIS SOFTWARE IS STRICTLY PROPRIETARY AND PROTECTED BY COPYRIGHT LAW 🚨**
-
-**UNAUTHORIZED USE IS ILLEGAL AND WILL BE PROSECUTED TO THE FULLEST EXTENT OF THE LAW**
-
-- 🔒 **NO LICENSE GRANTED** - You have ZERO rights to use, copy, modify, or distribute this code
-- 👁️ **ACTIVELY MONITORED** - This repository is under constant surveillance for copyright violations
-- ⚖️ **LEGAL CONSEQUENCES** - Violations result in criminal charges (up to 5 years prison) and civil penalties 
-- 🛡️ **ZERO TOLERANCE** - Any unauthorized use will result in immediate legal action
-
-**READ THE FULL LICENSE: [LICENSE.md](./LICENSE.md)**
-
-
 # ChatGPT Clone - Full-Stack AI Chat Application
 
 A sophisticated, production-ready ChatGPT clone built with Next.js 14, featuring real-time streaming, multimodal capabilities, persistent chat history, and advanced memory management. This application demonstrates enterprise-grade architecture patterns and modern full-stack development practices.
