@@ -12,7 +12,6 @@
 - [📁 Project Structure](#-project-structure)
 - [🔌 API Documentation](#-api-documentation)
 - [🎨 Components](#-components)
-- [📈 Performance](#-performance)
 - [🤝 Contributing](#-contributing)
 
 ## 🎯 Overview
@@ -228,41 +227,6 @@ const {
   onFileUpload={handleFileUpload}
 />
 ```
-
-## 📈 Performance & Architecture
-
-### Real-Time Streaming Implementation
-- **Server-Sent Events (SSE)** for real-time responses
-- **Optimistic UI updates** for immediate feedback
-- **Connection recovery** and error handling
-- **Token-by-token streaming** with Vercel AI SDK
-
-### Database Optimization
-- **Indexed queries** for fast chat retrieval
-- **Efficient message storage** with MongoDB
-- **Connection pooling** for scalability
-- **Pagination support** for large chat histories
-
-### Scalability Features
-- **Serverless architecture** with Next.js API routes
-- **CDN integration** with Uploadcare
-- **Caching strategies** for frequently accessed data
-- **Error boundaries** and graceful degradation
-
-## 🛣️ Roadmap & Advanced Features
-
-### Coming Soon
-- **🤖 Multi-Agent Workflows** - Agent orchestration system
-- **🔧 Function Calling** - External API integration
-- **📊 Advanced Analytics** - Usage metrics and insights
-- **🌍 Internationalization** - Multi-language support
-- **🎨 Custom Themes** - User customizable UI
-
-### Enterprise Features
-- **Vector Database Integration** - Semantic search with Pinecone
-- **Advanced RAG Pipeline** - Document chunking and retrieval
-- **Microservices Architecture** - Service decomposition
-- **Monitoring & Observability** - Comprehensive logging
 
 ## 🤝 Contributing
 
