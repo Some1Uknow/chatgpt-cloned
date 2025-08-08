@@ -1,4 +1,4 @@
-# ChatGPT Clone - Full-Stack AI Chat Application | Next.js 14 + OpenAI GPT-4 + Real-Time Streaming
+# ChatGPT Clone - Full-Stack AI Chat Application | Next.js 14, AISDK, mem0, OpenAI
 
 > **A production-ready MVP ChatGPT clone with advanced features like multimodal AI, persistent memory, file attachments, and real-time streaming responses.**
 
