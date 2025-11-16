@@ -27,7 +27,8 @@ Perfect for developers looking to understand:
 - **Enterprise architecture** patterns
 
 ### 🎪 Live Demo
-[🔗 **Try the Live Application**](https://your-demo-link.vercel.app) | [📚 **Documentation**](https://your-docs-link.com)
+[🔗 **Try the Live Application**](https://chat-gpt0.vercel.app) | [📚 **Documentation**](https://your-docs-link.com)
+Demo Video - https://www.loom.com/share/fba51c660bea4ee3af4a73772e178040
 
 ## ✨ Key Features
 
